@@ -12,7 +12,7 @@ def upload_file(file_name,bucket,folder,object_name=None):
     # Upload the file
     s3_client = boto3.client('s3')
     try:
-        s3_key = folder + "cm20050609.csv"
+        s3_key = folder + "cm20050614.csv"
         response = s3_client.upload_file(file_name, bucket,s3_key)
     except ClientError as e:
         logging.error(e)
