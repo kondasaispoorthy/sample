@@ -8,22 +8,22 @@ user = 'admin'
 password = 'Spoorthy123' # Leave this empty if using AWS CLI for authentication
 port = '5439'  # Adjust the port as needed
 s3 = boto3.client('s3') 
+bucket_name = "spoorthyetl"
 # SQL COPY command to load data from S3 to Redshift
-copy_sql = """
-COPY dev.stage.products(
-productcode,
-productname,
-productline,
-productscale,
-productvendor,
-productdescription,
-quantityinstock,
-buyprice,
-msrp,
+copy_sql = f"""
+COPY dev.stage.employees(
+employeenumber,
+lastname,
+firstname,
+extension,
+email,
+officecode,
+reportsto,
+jobtitle,
 create_timestamp,
 update_timestamp
 )
-FROM 's3://spoorthyetl/Products/cm20050609.csv' IAM_ROLE 'arn:aws:iam::854668443937:role/service-role/AmazonRedshift-CommandsAccessRole-20231102T150508'  
+FROM 's3://{bucket_name}/Employees/20050609/Employees.csv' IAM_ROLE 'arn:aws:iam::854668443937:role/service-role/AmazonRedshift-CommandsAccessRole-20231102T150508'  
 ACCEPTINVCHARS 
 FORMAT AS CSV DELIMITER
  ',' QUOTE '"' IGNOREHEADER 1 REGION AS 'eu-north-1';

@@ -11,24 +11,16 @@ s3 = boto3.client('s3')
 bucket_name = "spoorthyetl"
 # SQL COPY command to load data from S3 to Redshift
 copy_sql = f"""
-COPY dev.stage.customers(
-customernumber,
-customername,
-contactlastname,
-contactfirstname,
-phone,
-addressline1,
-addressline2,
-city,
-state,
-postalcode,
-country,
-salesrepemployeenumber,
-creditlimit,
+COPY dev.stage.orderdetails(
+ordernumber,
+productcode,
+quantityordered,
+priceeach,
+orderlinenumber,
 create_timestamp,
 update_timestamp
 )
-FROM 's3://{bucket_name}/Customers/20050609/Customers.csv' IAM_ROLE 'arn:aws:iam::854668443937:role/service-role/AmazonRedshift-CommandsAccessRole-20231102T150508'  
+FROM 's3://{bucket_name}/Orderdetails/20050609/Orderdetails.csv' IAM_ROLE 'arn:aws:iam::854668443937:role/service-role/AmazonRedshift-CommandsAccessRole-20231102T150508'  
 ACCEPTINVCHARS 
 FORMAT AS CSV DELIMITER
  ',' QUOTE '"' IGNOREHEADER 1 REGION AS 'eu-north-1';

@@ -23,11 +23,9 @@ def get_csvdata(dbdate):
             cursor.execute(f'''
             SELECT
             productLine,
-            textDescription,
-            htmlDescription,
             create_timestamp,
             update_timestamp          
-            FROM {db.schema_name}.{table_name}
+            FROM {table_name}@konda_dblink_classicmodels
             WHERE to_char(update_timestamp, 'yyyy-mm-dd') >= '{etl_batch_date}'
             ''')
             rows = cursor.fetchall()
