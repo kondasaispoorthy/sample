@@ -8,6 +8,13 @@ if platform.system() == "Windows":
 oracledb.init_oracle_client(lib_dir=d1)
 with oracledb.connect(user=un, password=pw, dsn=cs) as connection:
     with connection.cursor() as cursor:
-        sql = """select * from customers"""
-        for r in cursor.execute(sql):
-            print(r)
+        sql = """ALTER SESSION SET CURRENT_SCHEMA = g23konda"""
+        cursor.execute(sql)
+        sql1 = """DROP PUBLIC DATABASE LINK konda_dblink_classicmodels"""
+        cursor.execute(sql1)
+        sql2 = """ CONNECT TO cm_20050609 identified by cm_20050609123 USING 'XE'"""
+        cursor.execute(sql2)
+        sql3 = """select * from Customers@konda_dblink_classicmodels"""
+        for r in cursor.execute(sql3):
+           print(r)
+  
