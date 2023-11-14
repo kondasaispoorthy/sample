@@ -11,45 +11,18 @@ s3 = boto3.client('s3')
 bucket_name = "spoorthyetl"
 # SQL COPY command to load data from S3 to Redshift
 copy_sql = f"""
-INSERT INTO prod.customers (
-src_customerNumber,
-customerName,
-contactLastName,
-contactFirstName,
-phone,
-addressLine1,
-addressLine2,
-city,
-state,
-postalCode,
-country,
-dw_employee_id,
-salesRepEmployeeNumber,
-creditLimit,
+INSERT INTO prod.productlines(
+productLine,
 src_create_timestamp,
 src_update_timestamp
 )
 SELECT 
-a.customerNumber,
-a.customerName,
-a.contactLastName,
-a.contactFirstName,
-a.phone,
-a.addressLine1,
-a.addressLine2,
-a.city,
-a.state,
-a.postalCode,
-a.country,
-c.dw_employee_id,
-a.salesRepEmployeeNumber,
-a.creditLimit,
+a.productLine,
 a.create_timestamp,
 a.update_timestamp
-FROM 
-stage.customers a 
-LEFT JOIN prod.employees c ON
-a.salesRepEmployeeNumber = c.employeeNumber;
+FROM
+stage.productlines a;
+
 """
 # Connecting to redshift table
 try:
