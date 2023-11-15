@@ -1,4 +1,4 @@
-# Importing the required modules
+# Importing the required Modules
 import boto3
 import oracledb
 import csv
@@ -10,10 +10,9 @@ import sys
 sys.path.append('C:/Users/saispoorthy.konda/Downloads/Pratice/sample')
 import db
 # Storing table_name,bucket_name,etl_batch_date in variables
-table_name ="Products"
+table_name ="Payments"
 bucket_name = "spoorthyetl"
 etl_batch_date = db.etl_batch_date;
-
 # Getting data from Oracle DB and storing in CSV File
 def get_csvdata():
     # Specifying Oracle Credentials & Oracle Client
@@ -24,38 +23,27 @@ def get_csvdata():
     oracledb.init_oracle_client(lib_dir=d1)
     # creating a oracle connection
     with oracledb.connect(user=un, password=pw, dsn=cs) as connection:
-        # Executing a Query on Oracle db
+        # Executing a query on Oracle DB
         with connection.cursor() as cursor:
             cursor.execute(f'''
-            SELECT
-            productcode,
-            productname,
-            productline,
-            productscale,
-            productvendor,
-            quantityinstock,
-            buyprice,
-            msrp,
-            create_timestamp,
-            update_timestamp               
-            FROM {table_name}@konda_dblink_classicmodels
+            SELECT * FROM {table_name}@konda_dblink_classicmodels
             WHERE to_char(update_timestamp, 'yyyy-mm-dd') >= '{etl_batch_date}'
             ''')
-            # storing O/P from Query into CSV Files
+            # storing O/P from query into CSV file
             rows = cursor.fetchall()
             column_names = [description[0] for description in cursor.description]
             with open(f'{table_name}.csv','w', newline="") as file:
                 csv_writer = csv.writer(file)
                 csv_writer.writerow(column_names)
                 csv_writer.writerows(rows)
-# creating folders in buckets
+# creating folders in bucket
 def create_bucketfolders():
     s3 = boto3.client('s3')
     x = db.schema_name.replace("cm_", "")
     folder_name = f'{table_name}/{x}'
     s3.put_object(Bucket=bucket_name, Key=(folder_name+'/'))
     return folder_name
-# Transfering data from CSV file into S3 Bucket
+# Transferring data from CSV file into S3 bucket
 def upload_file(filename,folder,object_name=None):
     s3_client = boto3.client('s3')
     if object_name is None:

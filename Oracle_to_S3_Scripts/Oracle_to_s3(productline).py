@@ -1,3 +1,4 @@
+# Importing required modules
 import boto3
 import oracledb
 import csv
@@ -5,12 +6,16 @@ import os
 from datetime import datetime
 from botocore.exceptions import ClientError
 import logging
+import sys
+sys.path.append('C:/Users/saispoorthy.konda/Downloads/Pratice/sample')
 import db
+# storing table_name,bucket_name,etl_batch_date in variables
 table_name ="Productlines"
 bucket_name = "spoorthyetl"
-dbname = "CM_20050609"
 etl_batch_date = db.etl_batch_date;
-def get_csvdata(dbdate):
+
+# Getting data from Oracle DB and storing in CSV File
+def get_csvdata():
     # Specifying Oracle Credentials & Oracle Client
     un = 'g23konda'
     cs = '54.224.209.13:1521/xe'
@@ -20,6 +25,7 @@ def get_csvdata(dbdate):
     # creating a oracle connection
     with oracledb.connect(user=un, password=pw, dsn=cs) as connection:
         with connection.cursor() as cursor:
+    # Executing query on Oracle DB
             cursor.execute(f'''
             SELECT
             productLine,
@@ -28,18 +34,23 @@ def get_csvdata(dbdate):
             FROM {table_name}@konda_dblink_classicmodels
             WHERE to_char(update_timestamp, 'yyyy-mm-dd') >= '{etl_batch_date}'
             ''')
+            # O/P from query is stored in CSV File
             rows = cursor.fetchall()
             column_names = [description[0] for description in cursor.description]
             with open(f'{table_name}.csv','w', newline="") as file:
                 csv_writer = csv.writer(file)
                 csv_writer.writerow(column_names)
                 csv_writer.writerows(rows)
+
+# creating folders in Buckets
 def create_bucketfolders():
     s3 = boto3.client('s3')
     x = db.schema_name.replace("cm_", "")
     folder_name = f'{table_name}/{x}'
     s3.put_object(Bucket=bucket_name, Key=(folder_name+'/'))
     return folder_name
+
+# Transfering the data from CSV file into S3 Bucket
 def upload_file(filename,folder,object_name=None):
     s3_client = boto3.client('s3')
     if object_name is None:
@@ -51,7 +62,7 @@ def upload_file(filename,folder,object_name=None):
         logging.error(e)
         return False
     return True
-get_csvdata(dbdate = datetime(2001,1,1,0,0))
+get_csvdata()
 folder = create_bucketfolders()
 folder = folder + '/'
 print(folder)

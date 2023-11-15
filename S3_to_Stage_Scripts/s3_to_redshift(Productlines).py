@@ -2,11 +2,18 @@ import boto3
 import pandas as pd
 import io
 import psycopg2 as pg
+import sys
+sys.path.append('C:/Users/saispoorthy.konda/Downloads/Pratice/sample')
+import db
 s3 = boto3.client('s3')
+
 # Specify the S3 bucket and object key of the CSV file
 bucket_name = 'spoorthyetl'
-file_key = 'Productlines/20050609/Productlines.csv'
-redshift_table = file_key.split("/")[0].lower()
+table_name = "productlines"
+table_nm = table_name.capitalize()
+schema = db.schema_name.replace("cm_","")
+file_key = f"{table_nm}/{schema}/{table_nm}.csv"
+
 # Redshift connection parameters
 host = 'default-workgroup.854668443937.eu-north-1.redshift-serverless.amazonaws.com'
 database = 'dev'
@@ -14,6 +21,8 @@ user = 'admin'
 password = 'Spoorthy123' # Leave this empty if using AWS CLI for authentication
 port = '5439'  # Adjust the port as needed
 s3 = boto3.client('s3') 
+
+# Returns columns from a CSV File
 def return_columns():
 # Read the CSV file from S3
     response = s3.get_object(Bucket=bucket_name, Key=file_key)
@@ -26,9 +35,10 @@ def return_columns():
     s = s.replace("]"," ")
     return s
 val = return_columns()
+
 # SQL COPY command to load data from S3 to Redshift
 copy_sql = f"""
-COPY dev.stage.{redshift_table}(
+COPY dev.stage.{table_name}(
 {val}
 )
 FROM 's3://{bucket_name}/{file_key}' IAM_ROLE 'arn:aws:iam::854668443937:role/service-role/AmazonRedshift-CommandsAccessRole-20231102T150508'  
@@ -46,6 +56,9 @@ try:
         port=port,
     )
     cursor = conn.cursor()
+
+    # Truncate the table(if exists)
+    cursor.execute(f"TRUNCATE TABLE stage.{table_name}")
 
     # Execute the COPY command to load data from S3
     cursor.execute(copy_sql)

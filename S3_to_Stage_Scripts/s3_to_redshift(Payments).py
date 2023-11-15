@@ -1,5 +1,8 @@
 import psycopg2 as pg
 import boto3
+import sys
+sys.path.append('C:/Users/saispoorthy.konda/Downloads/Pratice/sample')
+import db
 
 # Redshift connection parameters
 host = 'default-workgroup.854668443937.eu-north-1.redshift-serverless.amazonaws.com'
@@ -8,11 +11,18 @@ user = 'admin'
 password = 'Spoorthy123' # Leave this empty if using AWS CLI for authentication
 port = '5439'  # Adjust the port as needed
 s3 = boto3.client('s3') 
+
+# Specifying bucket_name,table_name, schema respectively
 bucket_name = "spoorthyetl"
-table_name ="Payments"
+table_name = "payments"
+table_nm = table_name.capitalize()
+schema = db.schema_name.replace("cm_","")
+file_path = f"{table_nm}/{schema}/{table_nm}.csv"
+print(f"filepath is :{file_path}")
+
 # SQL COPY command to load data from S3 to Redshift
 copy_sql = f"""
-COPY dev.stage.payments(
+COPY dev.stage.{table_name}(
 customernumber,
 checknumber,
 paymentdate,
@@ -20,7 +30,7 @@ amount,
 create_timestamp,
 update_timestamp
 )
-FROM 's3://{bucket_name}/{table_name}/20050609/{table_name}.csv' IAM_ROLE 'arn:aws:iam::854668443937:role/service-role/AmazonRedshift-CommandsAccessRole-20231102T150508'  
+FROM 's3://{bucket_name}/{file_path}' IAM_ROLE 'arn:aws:iam::854668443937:role/service-role/AmazonRedshift-CommandsAccessRole-20231102T150508'  
 ACCEPTINVCHARS 
 FORMAT AS CSV DELIMITER
  ',' QUOTE '"' IGNOREHEADER 1 REGION AS 'eu-north-1';
@@ -35,6 +45,9 @@ try:
         port=port,
     )
     cursor = conn.cursor()
+
+    # Truncate the table(if exists)
+    cursor.execute(f"TRUNCATE TABLE stage.{table_name}")
 
     # Execute the COPY command to load data from S3
     cursor.execute(copy_sql)
