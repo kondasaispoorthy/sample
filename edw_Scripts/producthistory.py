@@ -31,41 +31,27 @@ try:
     etl_batch_no = df.etl_batch_no[0]
     etl_batch_date = df.etl_batch_date[0]
     print(f"etl_batch_no and etl_batch_date are {etl_batch_no} and {etl_batch_date} respectively")
+
     # SQL COPY command to load data from S3 to Redshift
     copy_sql = f"""
-    INSERT INTO prod.orders (
-    dw_customer_id,
-    src_orderNumber,
-    orderDate,
-    requiredDate,
-    shippedDate,
-    status,
-    comments,
-    src_customerNumber,
-    cancelledDate,
-    src_create_timestamp,
-    src_update_timestamp,
-    etl_batch_no,
-    etl_batch_date
+    INSERT INTO prod.product_history
+    (
+     dw_product_id,
+     MSRP,
+     effective_from_date,
+     dw_active_record_ind,
+     create_etl_batch_no,
+     create_etl_batch_date
     )
-    SELECT 
-    c.dw_customer_id,
-    a.orderNumber,
-    a.orderDate,
-    a.requiredDate,
-    a.shippedDate,
-    a.status,
-    a.comments,
-    a.customerNumber,
-    a.cancelledDate,
-    a.create_timestamp,
-    a.update_timestamp,
-    {etl_batch_no},
-    cast('{etl_batch_date}' as date)
-    FROM 
-    stage.orders a 
-    JOIN prod.customers c ON
-    a.customerNumber = c.src_customerNumber
+    select 
+    dw_product_id,
+    MSRP,
+    DATE '2001-01-01' effective_from_date,
+    1 dw_active_record_ind,
+    {etl_batch_no} create_etl_batch_no,
+    cast('{etl_batch_date}' as date) create_etl_batch_date
+    from 
+    prod.products;
     """
 
     # Execute the COPY command to load data from S3

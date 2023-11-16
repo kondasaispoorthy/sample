@@ -15,7 +15,7 @@ schema = db.schema_name.replace("cm_","")
 file_key = f"{table_nm}/{schema}/{table_nm}.csv"
 
 # Redshift connection parameters
-host = 'default-workgroup.854668443937.eu-north-1.redshift-serverless.amazonaws.com'
+host = 'spoorthy-workgroup.854668443937.us-east-1.redshift-serverless.amazonaws.com'
 database = 'dev'
 user = 'admin'
 password = 'Spoorthy123' # Leave this empty if using AWS CLI for authentication

@@ -6,7 +6,7 @@ sys.path.append('C:/Users/saispoorthy.konda/Downloads/Pratice/sample')
 import db
 
 # Redshift connection parameters
-host = 'default-workgroup.854668443937.eu-north-1.redshift-serverless.amazonaws.com'
+host = 'spoorthy-workgroup.854668443937.us-east-1.redshift-serverless.amazonaws.com'
 database = 'dev'
 user = 'admin'
 password = 'Spoorthy123' # Leave this empty if using AWS CLI for authentication
