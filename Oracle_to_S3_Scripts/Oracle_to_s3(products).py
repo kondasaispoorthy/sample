@@ -9,10 +9,11 @@ import logging
 import sys
 sys.path.append('C:/Users/saispoorthy.konda/Downloads/Pratice/sample')
 import db
+import redshift_conn
 # Storing table_name,bucket_name,etl_batch_date in variables
 table_name ="Products"
 bucket_name = "spoorthyetl"
-etl_batch_date = db.etl_batch_date;
+etl_batch_date = redshift_conn.etl_batch_date;
 
 # Getting data from Oracle DB and storing in CSV File
 def get_csvdata():

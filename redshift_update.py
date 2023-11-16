@@ -21,16 +21,18 @@ try:
     )
     cursor = conn.cursor()
     # selecting values from batch_control table
+    cursor.execute(f''' UPDATE etl_metadata.batch_control
+    SET etl_batch_no = 1002,
+    etl_batch_date = DATE '2005-06-10'
+ ''')
+    cursor.execute(f"commit")
     cursor.execute(f"select * FROM etl_metadata.batch_control")
     print("Query executed successfully")
-
     # Convert the results of the SQL query into a pandas DataFrame.
     df = pd.DataFrame(cursor.fetchall(), columns=list(map(lambda col: col[0],cursor.description)))
-
-    # storing etl_batch_no and etl_batch_date in variables
     etl_batch_no = df.etl_batch_no[0]
     etl_batch_date = df.etl_batch_date[0]
-    print(f"etl_batch_no and etl_batch_date are {etl_batch_no} and {etl_batch_date} in redshift respectively")
+    print(f"etl_batch_no and etl_batch_date are {etl_batch_no} and {etl_batch_date} respectively")
 except Exception as e:
     print(f"Error: {str(e)}")
 conn.close()

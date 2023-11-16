@@ -8,11 +8,12 @@ from botocore.exceptions import ClientError
 import logging
 import sys
 sys.path.append('C:/Users/saispoorthy.konda/Downloads/Pratice/sample')
+import redshift_conn
 import db
 # Storing table_name,bucket_name,etl_batch_date in variables
 table_name ="Customers"
 bucket_name = "spoorthyetl"
-etl_batch_date = db.etl_batch_date;
+etl_batch_date = redshift_conn.etl_batch_date;
 # Getting data from Oracle DB and storing in CSV File
 def get_csvdata():
     # Specifying Oracle Credentials & Oracle Client

@@ -13,8 +13,8 @@ connection = oracledb.connect(user=un, password=pw, dsn=cs)
 cursor = connection.cursor() 
 
 # specifying schema_name and password for DB Link
-schema_name = 'cm_20050609'
-identified = 'cm_20050609123'
+schema_name = 'cm_20050610'
+identified = 'cm_20050610123'
 
 # executing query to create DB Link
 cursor.execute(f'Drop public database link konda_dblink_classicmodels')
