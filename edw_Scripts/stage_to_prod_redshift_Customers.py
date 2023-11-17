@@ -86,7 +86,7 @@ try:
     cursor.execute(copy_sql)
     conn.commit()
 
-    print("Data loaded successfully into Redshift.")
+    print(f"{table_name} shifted successfully into Redshift.")
 
 except Exception as e:
     print(f"Error: {str(e)}")

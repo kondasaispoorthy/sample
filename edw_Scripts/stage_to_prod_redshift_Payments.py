@@ -10,7 +10,8 @@ password = 'Spoorthy123' # Leave this empty if using AWS CLI for authentication
 port = '5439'  # Adjust the port as needed
 s3 = boto3.client('s3') 
 bucket_name = "spoorthyetl"
-table_name = "products"
+table_name = "payments"
+
 
 # Connecting to redshift table
 try:
@@ -33,49 +34,42 @@ try:
     etl_batch_date = df.etl_batch_date[0]
     print(f"etl_batch_no and etl_batch_date are {etl_batch_no} and {etl_batch_date} respectively")
 
-    # SQL COPY command to transfer data from stage to dev in  Redshift
+    # SQL command to transfer data from stage to prod in  Redshift
     copy_sql = f"""
-    INSERT INTO prod.products(
-    src_productCode,
-    productName,
-    productLine,
-    productScale,
-    productVendor,
-    quantityInStock,
-    buyPrice,
-    MSRP,
-    dw_product_line_id,
+    INSERT INTO prod.payments(
+    dw_customer_id,
+    src_customerNumber,
+    checkNumber,
+    paymentDate,
+    amount,
     src_create_timestamp,
     src_update_timestamp,
     etl_batch_no,
     etl_batch_date
     )
-    SELECT
-    a.productCode,
-    a.productName,
-    a.productLine,
-    a.productScale,
-    a.productVendor,
-    a.quantityInStock,
-    a.buyPrice,
-    a.MSRP,
-    c.dw_product_line_id,
+    SELECT 
+    c.dw_customer_id,
+    a.customerNumber,
+    a.checkNumber,
+    a.paymentDate,
+    a.amount,
     a.create_timestamp,
     a.update_timestamp,
     {etl_batch_no},
     cast('{etl_batch_date}' as date)
     FROM
-    stage.products a 
-    JOIN prod.productlines c ON
-    a.productLine = c.productLine;
+    stage.payments a 
+    JOIN prod.customers c ON 
+    a.customerNumber = c.src_customerNumber;
     """
     # Truncating the table(Not Neccessary)
     cursor.execute(f"TRUNCATE TABLE prod.{table_name} ")
+    
     # Execute the COPY command to load data from S3
     cursor.execute(copy_sql)
     conn.commit()
 
-    print("Data loaded successfully into Redshift.")
+    print(f"{table_name} shifted successfully into Redshift.")
 
 except Exception as e:
     print(f"Error: {str(e)}")

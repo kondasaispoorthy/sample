@@ -10,7 +10,8 @@ password = 'Spoorthy123' # Leave this empty if using AWS CLI for authentication
 port = '5439'  # Adjust the port as needed
 s3 = boto3.client('s3') 
 bucket_name = "spoorthyetl"
-table_name = "employees"
+table_name = "orderdetails"
+
 
 # Connecting to redshift table
 try:
@@ -31,42 +32,41 @@ try:
     # Extracting etl_batch_no and etl_batch_date from DataFrame
     etl_batch_no = df.etl_batch_no[0]
     etl_batch_date = df.etl_batch_date[0]
+    print(f"etl_batch_no and etl_batch_date are {etl_batch_no} and {etl_batch_date} respectively")
 
-    # SQL COPY command to load data from Stage to Prod in Redshift
+    # SQL  command to transfer from stage_to_prod in redshift
     copy_sql = f"""
-    INSERT INTO prod.employees (
-    employeeNumber,
-    lastName,
-    firstName,
-    extension,
-    email,
-    officeCode,
-    reportsTo,
-    jobTitle,
-    dw_office_id,
+    INSERT INTO prod.orderdetails(
+    dw_order_id,
+    dw_product_id,
+    src_orderNumber,
+    src_productCode,
+    quantityOrdered,
+    priceEach,
+    orderLineNumber,
     src_create_timestamp,
     src_update_timestamp,
     etl_batch_no,
     etl_batch_date
     )
     SELECT
-    a.employeeNumber,
-    a.lastName,
-    a.firstName,
-    a.extension,
-    a.email,
-    a.officeCode,
-    a.reportsTo,
-    a.jobTitle,
-    c.dw_office_id,
+    c.dw_order_id,
+    d.dw_product_id,
+    a.orderNumber,
+    a.productCode,
+    a.quantityOrdered,
+    a.priceEach,
+    a.orderLineNumber,
     a.create_timestamp,
     a.update_timestamp,
     {etl_batch_no},
     cast('{etl_batch_date}' as date)
     FROM
-    stage.employees a 
-    JOIN prod.offices c ON 
-    a.officeCode = c.officeCode;
+    stage.orderdetails a 
+    JOIN prod.orders c 
+    ON a.orderNumber = c.src_orderNumber
+    JOIN prod.products d ON
+    a.productCode = d.src_productCode
     """
     # Truncating the table(Not Neccessary)
     cursor.execute(f"TRUNCATE TABLE prod.{table_name} ")
@@ -75,7 +75,7 @@ try:
     cursor.execute(copy_sql)
     conn.commit()
 
-    print("Data loaded successfully into Redshift.")
+    print(f"{table_name} shifted successfully into Redshift.")
 
 except Exception as e:
     print(f"Error: {str(e)}")

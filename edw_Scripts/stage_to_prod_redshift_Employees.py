@@ -10,8 +10,7 @@ password = 'Spoorthy123' # Leave this empty if using AWS CLI for authentication
 port = '5439'  # Adjust the port as needed
 s3 = boto3.client('s3') 
 bucket_name = "spoorthyetl"
-table_name = "payments"
-
+table_name = "employees"
 
 # Connecting to redshift table
 try:
@@ -32,44 +31,51 @@ try:
     # Extracting etl_batch_no and etl_batch_date from DataFrame
     etl_batch_no = df.etl_batch_no[0]
     etl_batch_date = df.etl_batch_date[0]
-    print(f"etl_batch_no and etl_batch_date are {etl_batch_no} and {etl_batch_date} respectively")
 
-    # SQL command to transfer data from stage to prod in  Redshift
+    # SQL COPY command to load data from Stage to Prod in Redshift
     copy_sql = f"""
-    INSERT INTO prod.payments(
-    dw_customer_id,
-    src_customerNumber,
-    checkNumber,
-    paymentDate,
-    amount,
+    INSERT INTO prod.employees (
+    employeeNumber,
+    lastName,
+    firstName,
+    extension,
+    email,
+    officeCode,
+    reportsTo,
+    jobTitle,
+    dw_office_id,
     src_create_timestamp,
     src_update_timestamp,
     etl_batch_no,
     etl_batch_date
     )
-    SELECT 
-    c.dw_customer_id,
-    a.customerNumber,
-    a.checkNumber,
-    a.paymentDate,
-    a.amount,
+    SELECT
+    a.employeeNumber,
+    a.lastName,
+    a.firstName,
+    a.extension,
+    a.email,
+    a.officeCode,
+    a.reportsTo,
+    a.jobTitle,
+    c.dw_office_id,
     a.create_timestamp,
     a.update_timestamp,
     {etl_batch_no},
     cast('{etl_batch_date}' as date)
     FROM
-    stage.payments a 
-    JOIN prod.customers c ON 
-    a.customerNumber = c.src_customerNumber;
+    stage.employees a 
+    JOIN prod.offices c ON 
+    a.officeCode = c.officeCode;
     """
     # Truncating the table(Not Neccessary)
     cursor.execute(f"TRUNCATE TABLE prod.{table_name} ")
-    
+
     # Execute the COPY command to load data from S3
     cursor.execute(copy_sql)
     conn.commit()
 
-    print("Data loaded successfully into Redshift.")
+    print(f"{table_name} shifted successfully into Redshift.")
 
 except Exception as e:
     print(f"Error: {str(e)}")

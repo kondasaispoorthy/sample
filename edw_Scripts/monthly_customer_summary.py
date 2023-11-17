@@ -34,7 +34,7 @@ try:
 
     # SQL command to load data into prod in redshift
     copy_sql = f"""
-    INSERT INTO prod.monthly_customer_summary(
+INSERT INTO prod.monthly_customer_summary(
 dw_customer_id,
 summarydate,
 order_count,
@@ -111,7 +111,7 @@ ORDER BY 1,2;
     cursor.execute(copy_sql)
     conn.commit()
 
-    print("Data loaded successfully into Redshift.")
+    print("MCS loaded successfully into Redshift.")
 
 except Exception as e:
     print(f"Error: {str(e)}")

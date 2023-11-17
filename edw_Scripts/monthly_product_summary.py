@@ -34,7 +34,7 @@ try:
 
     # SQL COPY command to load data from S3 to Redshift
     copy_sql = f"""
-    INSERT INTO prod.monthly_product_summary
+INSERT INTO prod.monthly_product_summary
 (
 start_of_the_month_date,
 dw_product_id,
@@ -82,7 +82,7 @@ ORDER BY 1,2;
     cursor.execute(copy_sql)
     conn.commit()
 
-    print("Data loaded successfully into Redshift.")
+    print("MPS loaded successfully into Redshift.")
 
 except Exception as e:
     print(f"Error: {str(e)}")

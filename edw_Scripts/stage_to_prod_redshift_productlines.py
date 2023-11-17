@@ -10,8 +10,7 @@ password = 'Spoorthy123' # Leave this empty if using AWS CLI for authentication
 port = '5439'  # Adjust the port as needed
 s3 = boto3.client('s3') 
 bucket_name = "spoorthyetl"
-table_name = "orders"
-
+table_name = "productlines"
 # Connecting to redshift table
 try:
     conn = pg.connect(
@@ -32,41 +31,24 @@ try:
     etl_batch_no = df.etl_batch_no[0]
     etl_batch_date = df.etl_batch_date[0]
     print(f"etl_batch_no and etl_batch_date are {etl_batch_no} and {etl_batch_date} respectively")
-    # SQL COPY command to load data from S3 to Redshift
+
+    # SQL  command to transfer  data from stage to dev in  Redshift
     copy_sql = f"""
-    INSERT INTO prod.orders (
-    dw_customer_id,
-    src_orderNumber,
-    orderDate,
-    requiredDate,
-    shippedDate,
-    status,
-    comments,
-    src_customerNumber,
-    cancelledDate,
+    INSERT INTO prod.productlines(
+    productLine,
     src_create_timestamp,
     src_update_timestamp,
     etl_batch_no,
     etl_batch_date
     )
     SELECT 
-    c.dw_customer_id,
-    a.orderNumber,
-    a.orderDate,
-    a.requiredDate,
-    a.shippedDate,
-    a.status,
-    a.comments,
-    a.customerNumber,
-    a.cancelledDate,
+    a.productLine,
     a.create_timestamp,
     a.update_timestamp,
     {etl_batch_no},
     cast('{etl_batch_date}' as date)
-    FROM 
-    stage.orders a 
-    JOIN prod.customers c ON
-    a.customerNumber = c.src_customerNumber
+    FROM
+    stage.productlines a;
     """
     # Truncating the table(Not Neccessary)
     cursor.execute(f"TRUNCATE TABLE prod.{table_name} ")
@@ -74,7 +56,7 @@ try:
     cursor.execute(copy_sql)
     conn.commit()
 
-    print("Data loaded successfully into Redshift.")
+    print(f"{table_name} shifted successfully into Redshift.")
 
 except Exception as e:
     print(f"Error: {str(e)}")

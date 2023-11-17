@@ -105,7 +105,7 @@ GROUP BY 1,2;
     cursor.execute(copy_sql)
     conn.commit()
 
-    print("Data loaded successfully into Redshift.")
+    print("DPS loaded successfully into Redshift.")
 
 except Exception as e:
     print(f"Error: {str(e)}")

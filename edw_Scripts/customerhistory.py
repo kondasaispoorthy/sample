@@ -35,7 +35,7 @@ try:
     # SQL COPY command to load data from S3 to Redshift
     copy_sql = f"""
     DELETE FROM prod.customer_history
-    WHERE create_etl_batch_date >= cast('{etl_batch_date}' as date)
+    WHERE create_etl_batch_date >= cast('{etl_batch_date}' as date);
     INSERT INTO prod.customer_history(
     dw_customer_id,
     creditLimit,
@@ -57,7 +57,7 @@ try:
     cursor.execute(copy_sql)
     conn.commit()
 
-    print("Data loaded successfully into Redshift.")
+    print("customer history loaded successfully into Redshift.")
 
 except Exception as e:
     print(f"Error: {str(e)}")
