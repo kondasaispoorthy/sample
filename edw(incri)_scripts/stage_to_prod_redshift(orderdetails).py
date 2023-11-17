@@ -33,35 +33,55 @@ try:
     etl_batch_date = df.etl_batch_date[0]
     print(f"etl_batch_no and etl_batch_date are {etl_batch_no} and {etl_batch_date} respectively")
 
-    # SQL command to transfer data from stage to prod in  Redshift
+    # SQL  command to transfer from stage_to_prod in redshift
     copy_sql = f"""
-    INSERT INTO prod.payments(
-    dw_customer_id,
-    src_customerNumber,
-    checkNumber,
-    paymentDate,
-    amount,
-    src_create_timestamp,
-    src_update_timestamp,
-    etl_batch_no,
-    etl_batch_date
-    )
-    SELECT 
-    c.dw_customer_id,
-    a.customerNumber,
-    a.checkNumber,
-    a.paymentDate,
-    a.amount,
-    a.create_timestamp,
-    a.update_timestamp,
-    {etl_batch_no},
-    cast('{etl_batch_date}' as date)
-    FROM
-    stage.payments a 
-    JOIN prod.customers c ON 
-    a.customerNumber = c.src_customerNumber;
+    UPDATE prod.orderdetails a1 
+SET
+src_productCode = b1.productCode,
+quantityOrdered = b1.quantityOrdered,
+priceEach = b1.priceEach,
+orderLineNumber = b1.orderLineNumber,
+src_update_timestamp = b1.update_timestamp,
+dw_update_timestamp = current_timestamp
+FROM stage.orderdetails b1
+WHERE a1.src_orderNumber = b1.orderNumber;
+INSERT INTO prod.orderdetails(
+dw_order_id,
+dw_product_id,
+src_orderNumber,
+src_productCode,
+quantityOrdered,
+priceEach,
+orderLineNumber,
+src_create_timestamp,
+src_update_timestamp,
+etl_batch_no,
+etl_batch_date
+)
+SELECT
+c.dw_order_id,
+d.dw_product_id,
+a.orderNumber,
+a.productCode,
+a.quantityOrdered,
+a.priceEach,
+a.orderLineNumber,
+a.create_timestamp,
+a.update_timestamp,
+{etl_batch_no},
+cast('{etl_batch_date}' as date)
+FROM
+stage.orderdetails a LEFT JOIN prod.orderdetails b
+ON a.orderNumber = b.src_orderNumber
+JOIN prod.orders c 
+ON a.orderNumber = c.src_orderNumber
+JOIN prod.products d ON
+a.productCode = d.src_productCode
+WHERE b.src_orderNumber IS NULL;
+
+
     """
-    
+
     # Execute the COPY command to load data from S3
     cursor.execute(copy_sql)
     conn.commit()

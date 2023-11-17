@@ -11,7 +11,6 @@ port = '5439'  # Adjust the port as needed
 s3 = boto3.client('s3') 
 bucket_name = "spoorthyetl"
 
-
 # Connecting to redshift table
 try:
     conn = pg.connect(
@@ -35,33 +34,46 @@ try:
 
     # SQL command to transfer data from stage to prod in  Redshift
     copy_sql = f"""
-    INSERT INTO prod.payments(
-    dw_customer_id,
-    src_customerNumber,
-    checkNumber,
-    paymentDate,
-    amount,
-    src_create_timestamp,
-    src_update_timestamp,
-    etl_batch_no,
-    etl_batch_date
-    )
-    SELECT 
-    c.dw_customer_id,
-    a.customerNumber,
-    a.checkNumber,
-    a.paymentDate,
-    a.amount,
-    a.create_timestamp,
-    a.update_timestamp,
-    {etl_batch_no},
-    cast('{etl_batch_date}' as date)
-    FROM
-    stage.payments a 
-    JOIN prod.customers c ON 
-    a.customerNumber = c.src_customerNumber;
+    UPDATE 
+prod.payments a  
+SET
+src_customerNumber = b.customerNumber,
+checkNumber = b.checkNumber,
+paymentDate = b.paymentDate,
+amount = b.amount,
+src_update_timestamp = b.update_timestamp,
+dw_update_timestamp = current_timestamp
+FROM stage.payments b
+WHERE a.checkNumber = b.checkNumber;
+INSERT INTO prod.payments(
+dw_customer_id,
+src_customerNumber,
+checkNumber,
+paymentDate,
+amount,
+src_create_timestamp,
+src_update_timestamp,
+etl_batch_no,
+etl_batch_date
+)
+SELECT 
+c.dw_customer_id,
+a.customerNumber,
+a.checkNumber,
+a.paymentDate,
+a.amount,
+a.create_timestamp,
+a.update_timestamp,
+{etl_batch_no},
+cast('{etl_batch_date}' as date)
+FROM
+stage.payments a LEFT JOIN prod.payments b 
+ON a.checkNumber = b.checkNumber
+JOIN prod.customers c ON 
+a.customerNumber = c.src_customerNumber
+WHERE b.checkNumber IS NULL;
     """
-    
+
     # Execute the COPY command to load data from S3
     cursor.execute(copy_sql)
     conn.commit()

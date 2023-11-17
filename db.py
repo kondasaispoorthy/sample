@@ -30,4 +30,4 @@ df = pd.DataFrame(cursor.fetchall(), columns=list(map(lambda col: col[0],cursor.
 # etl_batch_no & etl_batch_date
 etl_batch_no = df.ETL_BATCH_NO[0]
 etl_batch_date = df.ETL_BATCH_DATE[0]
-print(f'etl batch no and etl batch date are {etl_batch_no} and {etl_batch_date} respectively')
+print(f'etl batch no and etl batch date are {etl_batch_no} and {etl_batch_date}  in oracle respectively')

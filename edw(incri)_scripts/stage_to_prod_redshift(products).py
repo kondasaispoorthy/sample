@@ -11,7 +11,6 @@ port = '5439'  # Adjust the port as needed
 s3 = boto3.client('s3') 
 bucket_name = "spoorthyetl"
 
-
 # Connecting to redshift table
 try:
     conn = pg.connect(
@@ -33,35 +32,60 @@ try:
     etl_batch_date = df.etl_batch_date[0]
     print(f"etl_batch_no and etl_batch_date are {etl_batch_no} and {etl_batch_date} respectively")
 
-    # SQL command to transfer data from stage to prod in  Redshift
+    # SQL COPY command to transfer data from stage to dev in  Redshift
     copy_sql = f"""
-    INSERT INTO prod.payments(
-    dw_customer_id,
-    src_customerNumber,
-    checkNumber,
-    paymentDate,
-    amount,
-    src_create_timestamp,
-    src_update_timestamp,
-    etl_batch_no,
-    etl_batch_date
-    )
-    SELECT 
-    c.dw_customer_id,
-    a.customerNumber,
-    a.checkNumber,
-    a.paymentDate,
-    a.amount,
-    a.create_timestamp,
-    a.update_timestamp,
-    {etl_batch_no},
-    cast('{etl_batch_date}' as date)
-    FROM
-    stage.payments a 
-    JOIN prod.customers c ON 
-    a.customerNumber = c.src_customerNumber;
+    UPDATE prod.products a 
+SET
+src_productCode = b.productCode,
+productName = b.productName,
+productLine = b.productLine,
+productscale = b.productscale,
+productVendor = b.productVendor,
+quantityInStock = b.quantityInStock,
+buyPrice = b.buyPrice,
+MSRP = b.MSRP,
+src_update_timestamp = b.update_timestamp,
+dw_update_timestamp = current_timestamp
+FROM stage.products b
+WHERE a.src_productCode = b.productCode;
+INSERT INTO prod.products(
+src_productCode,
+productName,
+productLine,
+productscale,
+productVendor,
+quantityInStock,
+buyPrice,
+MSRP,
+dw_product_line_id,
+src_create_timestamp,
+src_update_timestamp,
+etl_batch_no,
+etl_batch_date
+)
+SELECT
+a.productCode,
+a.productName,
+a.productLine,
+a.productscale,
+a.productVendor,
+a.quantityInStock,
+a.buyPrice,
+a.MSRP,
+c.dw_product_line_id,
+a.create_timestamp,
+a.update_timestamp,
+{etl_batch_no},
+cast('{etl_batch_date}' as date)
+FROM
+stage.products a LEFT JOIN prod.products b 
+ON a.productCode = b.src_productCode
+JOIN prod.productlines c ON
+a.productLine = c.productLine
+WHERE b.src_productCode IS NULL;
+
     """
-    
+
     # Execute the COPY command to load data from S3
     cursor.execute(copy_sql)
     conn.commit()

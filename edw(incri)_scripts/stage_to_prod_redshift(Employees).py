@@ -11,7 +11,6 @@ port = '5439'  # Adjust the port as needed
 s3 = boto3.client('s3') 
 bucket_name = "spoorthyetl"
 
-
 # Connecting to redshift table
 try:
     conn = pg.connect(
@@ -31,37 +30,55 @@ try:
     # Extracting etl_batch_no and etl_batch_date from DataFrame
     etl_batch_no = df.etl_batch_no[0]
     etl_batch_date = df.etl_batch_date[0]
-    print(f"etl_batch_no and etl_batch_date are {etl_batch_no} and {etl_batch_date} respectively")
 
-    # SQL command to transfer data from stage to prod in  Redshift
+    # SQL COPY command to load data from Stage to Prod in Redshift
     copy_sql = f"""
-    INSERT INTO prod.payments(
-    dw_customer_id,
-    src_customerNumber,
-    checkNumber,
-    paymentDate,
-    amount,
-    src_create_timestamp,
-    src_update_timestamp,
-    etl_batch_no,
-    etl_batch_date
-    )
-    SELECT 
-    c.dw_customer_id,
-    a.customerNumber,
-    a.checkNumber,
-    a.paymentDate,
-    a.amount,
-    a.create_timestamp,
-    a.update_timestamp,
-    {etl_batch_no},
-    cast('{etl_batch_date}' as date)
-    FROM
-    stage.payments a 
-    JOIN prod.customers c ON 
-    a.customerNumber = c.src_customerNumber;
+UPDATE prod.employees a
+SET
+lastName = b.lastName,
+firstName = b.firstName,
+extension = b.extension,
+email = b.email,
+officeCode = b.officeCode,
+reportsTo =  b.reportsto,
+jobTitle = b.jobTitle,
+src_update_timestamp = b.update_timestamp,
+dw_update_timestamp = current_timestamp
+FROM stage.employees b 
+WHERE a.employeeNumber = b.employeeNumber;
+INSERT INTO prod.employees (
+employeeNumber,
+lastName,
+firstName,
+extension,
+email,
+officeCode,
+reportsTo,
+jobTitle,
+dw_office_id,
+src_create_timestamp,
+src_update_timestamp
+)
+SELECT
+a.employeeNumber,
+a.lastName,
+a.firstName,
+a.extension,
+a.email,
+a.officeCode,
+a.reportsTo,
+a.jobTitle,
+c.dw_office_id,
+a.create_timestamp,
+a.update_timestamp
+FROM
+stage.employees a LEFT JOIN prod.employees b
+ON a.employeeNumber = b.employeeNumber
+JOIN prod.offices c ON 
+a.officeCode = c.officeCode
+WHERE b.employeeNumber IS NULL;
     """
-    
+
     # Execute the COPY command to load data from S3
     cursor.execute(copy_sql)
     conn.commit()

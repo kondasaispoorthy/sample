@@ -11,7 +11,6 @@ port = '5439'  # Adjust the port as needed
 s3 = boto3.client('s3') 
 bucket_name = "spoorthyetl"
 
-
 # Connecting to redshift table
 try:
     conn = pg.connect(
@@ -22,7 +21,7 @@ try:
         port=port,
     )
     cursor = conn.cursor()
-    # selecting values from batch_control table
+     # selecting values from batch_control table
     cursor.execute(f"select * FROM etl_metadata.batch_control")
 
     # Convert the results of the SQL query into a pandas DataFrame.
@@ -33,35 +32,43 @@ try:
     etl_batch_date = df.etl_batch_date[0]
     print(f"etl_batch_no and etl_batch_date are {etl_batch_no} and {etl_batch_date} respectively")
 
-    # SQL command to transfer data from stage to prod in  Redshift
+    # SQL COPY command to load data from S3 to Redshift
     copy_sql = f"""
-    INSERT INTO prod.payments(
-    dw_customer_id,
-    src_customerNumber,
-    checkNumber,
-    paymentDate,
-    amount,
-    src_create_timestamp,
-    src_update_timestamp,
-    etl_batch_no,
-    etl_batch_date
-    )
-    SELECT 
-    c.dw_customer_id,
-    a.customerNumber,
-    a.checkNumber,
-    a.paymentDate,
-    a.amount,
-    a.create_timestamp,
-    a.update_timestamp,
-    {etl_batch_no},
-    cast('{etl_batch_date}' as date)
-    FROM
-    stage.payments a 
-    JOIN prod.customers c ON 
-    a.customerNumber = c.src_customerNumber;
+UPDATE prod.customer_history a 
+SET dw_active_record_ind = 0,
+effective_to_date  = DATEADD(DAY,-1,cast('{etl_batch_date}' as date)),
+dw_update_timestamp = CURRENT_TIMESTAMP,
+update_etl_batch_no = {etl_batch_no},
+update_etl_batch_date = cast('{etl_batch_date}' as date)
+FROM  prod.customers b 
+WHERE a.dw_customer_id = b.dw_customer_id AND a.creditLimit <> b.creditLimit
+AND a.dw_active_record_ind  = 1;
+
+INSERT INTO prod.customer_history(
+dw_customer_id,
+creditLimit,
+effective_from_date,
+dw_active_record_ind,
+create_etl_batch_no,
+create_etl_batch_date
+
+)
+select
+c.dw_customer_id,
+c.creditLimit,
+cast('{etl_batch_date}' as date),
+1 dw_active_record_ind,
+{etl_batch_no} create_etl_batch_no,
+cast('{etl_batch_date}' as date) create_etl_batch_date
+FROM 
+prod.customers c
+LEFT JOIN
+(select dw_customer_id from prod.customer_history where 
+dw_active_record_ind = 1) d
+ON c.dw_customer_id = d.dw_customer_id
+WHERE d.dw_customer_id IS NULL;
     """
-    
+
     # Execute the COPY command to load data from S3
     cursor.execute(copy_sql)
     conn.commit()

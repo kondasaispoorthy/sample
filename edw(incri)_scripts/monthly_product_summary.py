@@ -34,51 +34,52 @@ try:
 
     # SQL COPY command to load data from S3 to Redshift
     copy_sql = f"""
-    INSERT INTO prod.customers (
-    src_customerNumber,
-    customerName,
-    contactLastName,
-    contactFirstName,
-    phone,
-    addressLine1,
-    addressLine2,
-    city,
-    state,
-    postalCode,
-    country,
-    dw_employee_id,
-    salesRepEmployeeNumber,
-    creditLimit,
-    src_create_timestamp,
-    src_update_timestamp,
-    etl_batch_no,
-    etl_batch_date
-    )
-    SELECT 
-    a.customerNumber,
-    a.customerName,
-    a.contactLastName,
-    a.contactFirstName,
-    a.phone,
-    a.addressLine1,
-    a.addressLine2,
-    a.city,
-    a.state,
-    a.postalCode,
-    a.country,
-    c.dw_employee_id,
-    a.salesRepEmployeeNumber,
-    a.creditLimit,
-    a.create_timestamp,
-    a.update_timestamp,
-    {etl_batch_no},
-    cast('{etl_batch_date}' as date)
-    FROM 
-    stage.customers a 
-    LEFT JOIN prod.employees c ON
-    a.salesRepEmployeeNumber = c.employeeNumber;
+   DELETE FROM  prod.monthly_product_summary
+WHERE start_of_the_month_date = DATE_TRUNC('MONTH',cast('{etl_batch_date}' as date)) ;
+INSERT INTO prod.monthly_product_summary
+(
+start_of_the_month_date,
+dw_product_id,
+customer_apd,
+customer_apm,
+product_order_amount,
+product_cost_amount,
+product_msrp_amount,
+cancelled_product_qty,
+cancelled_order_amount,
+cancelled_cost_amount,
+cancelled_mrp_amount,
+cancelled_order_apd,
+customer_order_apm,
+etl_batch_no,
+etl_batch_date
+)
+SELECT DATE_TRUNC('MONTH',orderDate) start_of_the_month_date,
+dw_product_id,
+SUM(customer_apd) as customer_apd,
+CASE 
+WHEN SUM(customer_apd) > 0 
+THEN 1 ELSE 0 
+END as customer_apm,
+SUM(product_order_amount) as product_order_amount,
+SUM(product_cost_amount) as product_cost_amount,
+SUM(product_MSRP_amount) as product_msrp_amount,
+SUM(cancelled_product_qty) as cancelled_product_qty,
+SUM(cancelled_order_amount) as cancelled_order_amount,
+SUM(cancelled_cost_amount) as cancelled_cost_amount,
+SUM(cancelled_msrp_amount) as cancelled_mrp_amount,
+SUM(cancelled_order_apd) as cancelled_order_apd,
+CASE
+WHEN SUM(cancelled_order_apd) > 0
+THEN 1 ELSE 0
+END as customer_order_apm,
+{etl_batch_no} as etl_batch_no,
+cast('{etl_batch_date}' as date) as etl_batch_date
+FROM prod.daily_product_summary p1
+WHERE DATE_TRUNC('MONTH',p1.orderDate) = DATE_TRUNC('MONTH',cast('{etl_batch_date}' as date)) 
+GROUP BY 1,2
+ORDER BY 1,2;
     """
-    # 
 
     # Execute the COPY command to load data from S3
     cursor.execute(copy_sql)
