@@ -34,6 +34,8 @@ try:
 
     # SQL COPY command to load data from S3 to Redshift
     copy_sql = f"""
+    DELETE FROM prod.customer_history
+    WHERE create_etl_batch_date >= cast('{etl_batch_date}' as date)
     INSERT INTO prod.customer_history(
     dw_customer_id,
     creditLimit,
@@ -41,7 +43,6 @@ try:
     dw_active_record_ind,
     create_etl_batch_no,
     create_etl_batch_date 
-
     )
     select dw_customer_id,
     creditLimit,

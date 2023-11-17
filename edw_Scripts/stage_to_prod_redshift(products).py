@@ -10,6 +10,7 @@ password = 'Spoorthy123' # Leave this empty if using AWS CLI for authentication
 port = '5439'  # Adjust the port as needed
 s3 = boto3.client('s3') 
 bucket_name = "spoorthyetl"
+table_name = "products"
 
 # Connecting to redshift table
 try:
@@ -68,7 +69,8 @@ try:
     JOIN prod.productlines c ON
     a.productLine = c.productLine;
     """
-
+    # Truncating the table(Not Neccessary)
+    cursor.execute(f"TRUNCATE TABLE prod.{table_name} ")
     # Execute the COPY command to load data from S3
     cursor.execute(copy_sql)
     conn.commit()

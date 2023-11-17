@@ -22,8 +22,8 @@ try:
     cursor = conn.cursor()
     # selecting values from batch_control table
     cursor.execute(f''' UPDATE etl_metadata.batch_control
-    SET etl_batch_no = 1002,
-    etl_batch_date = DATE '2005-06-10'
+    SET etl_batch_no = 1001,
+    etl_batch_date = DATE '2001-01-01'
  ''')
     cursor.execute(f"commit")
     cursor.execute(f"select * FROM etl_metadata.batch_control")

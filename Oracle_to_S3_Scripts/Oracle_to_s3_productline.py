@@ -1,4 +1,4 @@
-# Importing the required Modules
+# Importing required modules
 import boto3
 import oracledb
 import csv
@@ -8,12 +8,13 @@ from botocore.exceptions import ClientError
 import logging
 import sys
 sys.path.append('C:/Users/saispoorthy.konda/Downloads/Pratice/sample')
-import db
+#import db
 import redshift_conn
-# Storing table_name,bucket_name,etl_batch_date in variables
-table_name ="Orderdetails"
+# storing table_name,bucket_name,etl_batch_date in variables
+table_name ="Productlines"
 bucket_name = "spoorthyetl"
 etl_batch_date = redshift_conn.etl_batch_date;
+
 # Getting data from Oracle DB and storing in CSV File
 def get_csvdata():
     # Specifying Oracle Credentials & Oracle Client
@@ -24,27 +25,34 @@ def get_csvdata():
     oracledb.init_oracle_client(lib_dir=d1)
     # creating a oracle connection
     with oracledb.connect(user=un, password=pw, dsn=cs) as connection:
-        # Executing a query on Oracle DB
         with connection.cursor() as cursor:
+    # Executing query on Oracle DB
             cursor.execute(f'''
-            SELECT * FROM {table_name}@konda_dblink_classicmodels
+            SELECT
+            productLine,
+            create_timestamp,
+            update_timestamp          
+            FROM {table_name}@konda_dblink_classicmodels
             WHERE to_char(update_timestamp, 'yyyy-mm-dd') >= '{etl_batch_date}'
             ''')
-            # storing O/P from query into CSV file
+            # O/P from query is stored in CSV File
             rows = cursor.fetchall()
             column_names = [description[0] for description in cursor.description]
             with open(f'{table_name}.csv','w', newline="") as file:
                 csv_writer = csv.writer(file)
                 csv_writer.writerow(column_names)
                 csv_writer.writerows(rows)
-# creating folders in bucket
+
+# creating folders in Buckets
 def create_bucketfolders():
     s3 = boto3.client('s3')
-    x = db.schema_name.replace("cm_", "")
+    #x = db.schema_name.replace("cm_", "")
+    x = redshift_conn.etl_batch_date
     folder_name = f'{table_name}/{x}'
     s3.put_object(Bucket=bucket_name, Key=(folder_name+'/'))
     return folder_name
-# Transferring data from CSV file into S3 bucket
+
+# Transfering the data from CSV file into S3 Bucket
 def upload_file(filename,folder,object_name=None):
     s3_client = boto3.client('s3')
     if object_name is None:
@@ -61,3 +69,4 @@ folder = create_bucketfolders()
 folder = folder + '/'
 print(folder)
 upload_file(f'C:\\Users\\saispoorthy.konda\\Downloads\\Pratice\\sample\\{table_name}.csv',folder)
+print(f"Loaded the bucket {table_name}")

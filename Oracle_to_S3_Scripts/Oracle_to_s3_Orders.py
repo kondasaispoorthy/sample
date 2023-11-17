@@ -8,7 +8,7 @@ from botocore.exceptions import ClientError
 import logging
 import sys
 sys.path.append('C:/Users/saispoorthy.konda/Downloads/Pratice/sample')
-import db
+#import db
 import redshift_conn
 # Storing the table_name, bucket_name, etl_batch_date in variables
 table_name ="Orders"
@@ -53,7 +53,8 @@ def get_csvdata():
 # creating folders in bucket
 def create_bucketfolders():
     s3 = boto3.client('s3')
-    x = db.schema_name.replace("cm_", "")
+    #x = db.schema_name.replace("cm_", "")
+    x = redshift_conn.etl_batch_date
     folder_name = f'{table_name}/{x}'
     s3.put_object(Bucket=bucket_name, Key=(folder_name+'/'))
     return folder_name
@@ -74,3 +75,4 @@ folder = create_bucketfolders()
 folder = folder + '/'
 print(folder)
 upload_file(f'C:\\Users\\saispoorthy.konda\\Downloads\\Pratice\\sample\\{table_name}.csv',folder)
+print(f"Loaded the bucket {table_name}")

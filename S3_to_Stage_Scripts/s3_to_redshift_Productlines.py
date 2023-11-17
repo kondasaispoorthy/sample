@@ -4,15 +4,16 @@ import io
 import psycopg2 as pg
 import sys
 sys.path.append('C:/Users/saispoorthy.konda/Downloads/Pratice/sample')
-import db
+#import db
+import pandas as pd
 s3 = boto3.client('s3')
 
 # Specify the S3 bucket and object key of the CSV file
 bucket_name = 'spoorthyetl'
 table_name = "productlines"
 table_nm = table_name.capitalize()
-schema = db.schema_name.replace("cm_","")
-file_key = f"{table_nm}/{schema}/{table_nm}.csv"
+#schema = db.schema_name.replace("cm_","")
+#file_key = f"{table_nm}/{schema}/{table_nm}.csv"
 
 # Redshift connection parameters
 host = 'spoorthy-workgroup.854668443937.us-east-1.redshift-serverless.amazonaws.com'
@@ -21,9 +22,9 @@ user = 'admin'
 password = 'Spoorthy123' # Leave this empty if using AWS CLI for authentication
 port = '5439'  # Adjust the port as needed
 s3 = boto3.client('s3') 
-
+# 
 # Returns columns from a CSV File
-def return_columns():
+def return_columns(file_key):
 # Read the CSV file from S3
     response = s3.get_object(Bucket=bucket_name, Key=file_key)
     csv_content = response['Body'].read().decode('utf-8')
@@ -34,18 +35,6 @@ def return_columns():
     s = s.replace("["," ")
     s = s.replace("]"," ")
     return s
-val = return_columns()
-
-# SQL COPY command to load data from S3 to Redshift
-copy_sql = f"""
-COPY dev.stage.{table_name}(
-{val}
-)
-FROM 's3://{bucket_name}/{file_key}' IAM_ROLE 'arn:aws:iam::854668443937:role/service-role/AmazonRedshift-CommandsAccessRole-20231102T150508'  
-ACCEPTINVCHARS 
-FORMAT AS CSV DELIMITER
- ',' QUOTE '"' IGNOREHEADER 1 REGION AS 'eu-north-1';
-"""
 try:
     # Connect to Redshift
     conn = pg.connect(
@@ -56,15 +45,41 @@ try:
         port=port,
     )
     cursor = conn.cursor()
+    # selecting values from batch_control table
+    cursor.execute(f"select * FROM etl_metadata.batch_control")
+    print("Query executed successfully")
+
+    # Convert the results of the SQL query into a pandas DataFrame.
+    df = pd.DataFrame(cursor.fetchall(), columns=list(map(lambda col: col[0],cursor.description)))
+
+    # storing etl_batch_no and etl_batch_date in variables
+    etl_batch_no = df.etl_batch_no[0]
+    etl_batch_date = df.etl_batch_date[0]
+
+    file_path = f"{table_nm}/{etl_batch_date}/{table_nm}.csv"
+    print(f"filepath is :{file_path}")
+
+    val = return_columns(file_path)
 
     # Truncate the table(if exists)
     cursor.execute(f"TRUNCATE TABLE stage.{table_name}")
+
+        # SQL COPY command to load data from S3 to Redshift
+    copy_sql = f"""
+    COPY dev.stage.{table_name}(
+    {val}
+    )
+    FROM 's3://{bucket_name}/{file_path}' IAM_ROLE 'arn:aws:iam::854668443937:role/service-role/AmazonRedshift-CommandsAccessRole-20231102T150508'  
+    ACCEPTINVCHARS 
+    FORMAT AS CSV DELIMITER
+    ',' QUOTE '"' IGNOREHEADER 1 REGION AS 'eu-north-1';
+    """
 
     # Execute the COPY command to load data from S3
     cursor.execute(copy_sql)
     conn.commit()
 
-    print("Data loaded successfully into Redshift.")
+    print(f"{table_name} Data loaded successfully into Redshift.")
 
 except Exception as e:
     print(f"Error: {str(e)}")
