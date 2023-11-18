@@ -30,11 +30,11 @@ try:
     # Extracting etl_batch_no and etl_batch_date from DataFrame
     etl_batch_no = df.etl_batch_no[0]
     etl_batch_date = df.etl_batch_date[0]
-    print(f"etl_batch_no and etl_batch_date are {etl_batch_no} and {etl_batch_date} respectively")
+    #print(f"etl_batch_no and etl_batch_date are {etl_batch_no} and {etl_batch_date} respectively")
 
     # SQL COPY command to transfer data from stage to dev in  Redshift
     copy_sql = f"""
-    UPDATE prod.products a 
+    UPDATE dev_dw.products a 
 SET
 src_productCode = b.productCode,
 productName = b.productName,
@@ -46,9 +46,9 @@ buyPrice = b.buyPrice,
 MSRP = b.MSRP,
 src_update_timestamp = b.update_timestamp,
 dw_update_timestamp = current_timestamp
-FROM stage.products b
+FROM dev_stage.products b
 WHERE a.src_productCode = b.productCode;
-INSERT INTO prod.products(
+INSERT INTO dev_dw.products(
 src_productCode,
 productName,
 productLine,
@@ -78,9 +78,9 @@ a.update_timestamp,
 {etl_batch_no},
 cast('{etl_batch_date}' as date)
 FROM
-stage.products a LEFT JOIN prod.products b 
+dev_stage.products a LEFT JOIN dev_dw.products b 
 ON a.productCode = b.src_productCode
-JOIN prod.productlines c ON
+JOIN dev_dw.productlines c ON
 a.productLine = c.productLine
 WHERE b.src_productCode IS NULL;
 
@@ -90,7 +90,7 @@ WHERE b.src_productCode IS NULL;
     cursor.execute(copy_sql)
     conn.commit()
 
-    print("Data loaded successfully into Redshift.")
+    print("products shifted successfully into Redshift.")
 
 except Exception as e:
     print(f"Error: {str(e)}")

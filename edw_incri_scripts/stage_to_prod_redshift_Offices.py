@@ -30,11 +30,11 @@ try:
     # Extracting etl_batch_no and etl_batch_date from DataFrame
     etl_batch_no = df.etl_batch_no[0]
     etl_batch_date = df.etl_batch_date[0]
-    print(f"etl_batch_no and etl_batch_date are {etl_batch_no} and {etl_batch_date} respectively")
+    #print(f"etl_batch_no and etl_batch_date are {etl_batch_no} and {etl_batch_date} respectively")
 
     # SQL COPY command to load data from S3 to Redshift
     copy_sql = f"""
-    UPDATE prod.offices o1
+    UPDATE dev_dw.offices o1
 SET city = o2.city,
 phone = o2.phone,
 addressLine1 = o2.addressLine1,
@@ -45,9 +45,9 @@ postalCode = o1.postalCode,
 territory = o2.territory,
 src_update_timestamp = o2.update_timestamp,
 dw_update_timestamp = current_timestamp
-FROM stage.offices o2
+FROM dev_stage.offices o2
 where o1.officeCode = o2.officecode;
-insert into prod.offices
+insert into dev_dw.offices
 (officeCode,
 city,
 phone,
@@ -77,7 +77,7 @@ a.update_timestamp,
 {etl_batch_no},
 cast('{etl_batch_date}' as date)
 from 
-stage.offices a LEFT JOIN prod.offices b
+dev_stage.offices a LEFT JOIN dev_dw.offices b
 ON a.officeCode=b.OfficeCode
 where b.officeCode is null;
     """
@@ -85,7 +85,7 @@ where b.officeCode is null;
     cursor.execute(copy_sql)
     conn.commit()
 
-    print("Data loaded successfully into Redshift.")
+    print("Offices shifted successfully into Redshift.")
 
 except Exception as e:
     print(f"Error: {str(e)}")

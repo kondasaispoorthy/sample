@@ -24,6 +24,7 @@ if __name__ == '__main__':
     with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
         # Use executor.map to parallelize the execution of run_script
         results = list(executor.map(run_script, script_names))
+    
 
 
 

@@ -31,11 +31,11 @@ try:
     # Extracting etl_batch_no and etl_batch_date from DataFrame
     etl_batch_no = df.etl_batch_no[0]
     etl_batch_date = df.etl_batch_date[0]
-    print(f"etl_batch_no and etl_batch_date are {etl_batch_no} and {etl_batch_date} respectively")
+    #print(f"etl_batch_no and etl_batch_date are {etl_batch_no} and {etl_batch_date} respectively")
 
     # SQL  command to transfer from stage_to_prod in redshift
     copy_sql = f"""
-    UPDATE prod.orderdetails a1 
+    UPDATE dev_dw.orderdetails a1 
 SET
 src_productCode = b1.productCode,
 quantityOrdered = b1.quantityOrdered,
@@ -43,9 +43,9 @@ priceEach = b1.priceEach,
 orderLineNumber = b1.orderLineNumber,
 src_update_timestamp = b1.update_timestamp,
 dw_update_timestamp = current_timestamp
-FROM stage.orderdetails b1
+FROM dev_stage.orderdetails b1
 WHERE a1.src_orderNumber = b1.orderNumber;
-INSERT INTO prod.orderdetails(
+INSERT INTO dev_dw.orderdetails(
 dw_order_id,
 dw_product_id,
 src_orderNumber,
@@ -71,11 +71,11 @@ a.update_timestamp,
 {etl_batch_no},
 cast('{etl_batch_date}' as date)
 FROM
-stage.orderdetails a LEFT JOIN prod.orderdetails b
+dev_stage.orderdetails a LEFT JOIN dev_dw.orderdetails b
 ON a.orderNumber = b.src_orderNumber
-JOIN prod.orders c 
+JOIN dev_dw.orders c 
 ON a.orderNumber = c.src_orderNumber
-JOIN prod.products d ON
+JOIN dev_dw.products d ON
 a.productCode = d.src_productCode
 WHERE b.src_orderNumber IS NULL;
 
@@ -86,7 +86,7 @@ WHERE b.src_orderNumber IS NULL;
     cursor.execute(copy_sql)
     conn.commit()
 
-    print("Data loaded successfully into Redshift.")
+    print("OrderDetails shifted successfully into Redshift.")
 
 except Exception as e:
     print(f"Error: {str(e)}")

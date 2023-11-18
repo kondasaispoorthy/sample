@@ -30,13 +30,13 @@ try:
     # Extracting etl_batch_no and etl_batch_date from DataFrame
     etl_batch_no = df.etl_batch_no[0]
     etl_batch_date = df.etl_batch_date[0]
-    print(f"etl_batch_no and etl_batch_date are {etl_batch_no} and {etl_batch_date} respectively")
+    #print(f"etl_batch_no and etl_batch_date are {etl_batch_no} and {etl_batch_date} respectively")
 
     # SQL command to load data into prod in redshift
     copy_sql = f"""
-    DELETE FROM prod.monthly_customer_summary
+    DELETE FROM dev_dw.monthly_customer_summary
 WHERE summarydate = DATE_TRUNC('MONTH', CAST('{etl_batch_date}' AS DATE));
-INSERT INTO prod.monthly_customer_summary 
+INSERT INTO dev_dw.monthly_customer_summary 
 (
 dw_customer_id,
 summarydate,
@@ -105,7 +105,7 @@ WHEN SUM(new_customer_paid_apd) > 0 THEN 1 ELSE 0
 END as new_customer_paid_apm,
 {etl_batch_no} as etl_batch_no,
 CAST('{etl_batch_date}' AS DATE) as etl_batch_date
-FROM  prod.daily_customer_summary d1
+FROM  dev_dw.daily_customer_summary d1
 WHERE  DATE_TRUNC('MONTH',d1.summarydate) = DATE_TRUNC('MONTH', CAST('{etl_batch_date}' AS DATE))
 GROUP BY 1,2 
 ORDER BY 1,2
@@ -115,7 +115,7 @@ ORDER BY 1,2
     cursor.execute(copy_sql)
     conn.commit()
 
-    print("Data loaded successfully into Redshift.")
+    print("MCS loaded successfully into Redshift.")
 
 except Exception as e:
     print(f"Error: {str(e)}")

@@ -30,21 +30,21 @@ try:
     # Extracting etl_batch_no and etl_batch_date from DataFrame
     etl_batch_no = df.etl_batch_no[0]
     etl_batch_date = df.etl_batch_date[0]
-    print(f"etl_batch_no and etl_batch_date are {etl_batch_no} and {etl_batch_date} respectively")
+    #print(f"etl_batch_no and etl_batch_date are {etl_batch_no} and {etl_batch_date} respectively")
 
     # SQL COPY command to load data from S3 to Redshift
     copy_sql = f"""
-UPDATE prod.customer_history a 
+UPDATE dev_dw.customer_history a 
 SET dw_active_record_ind = 0,
 effective_to_date  = DATEADD(DAY,-1,cast('{etl_batch_date}' as date)),
 dw_update_timestamp = CURRENT_TIMESTAMP,
 update_etl_batch_no = {etl_batch_no},
 update_etl_batch_date = cast('{etl_batch_date}' as date)
-FROM  prod.customers b 
+FROM  dev_dw.customers b 
 WHERE a.dw_customer_id = b.dw_customer_id AND a.creditLimit <> b.creditLimit
 AND a.dw_active_record_ind  = 1;
 
-INSERT INTO prod.customer_history(
+INSERT INTO dev_dw.customer_history(
 dw_customer_id,
 creditLimit,
 effective_from_date,
@@ -61,9 +61,9 @@ cast('{etl_batch_date}' as date),
 {etl_batch_no} create_etl_batch_no,
 cast('{etl_batch_date}' as date) create_etl_batch_date
 FROM 
-prod.customers c
+dev_dw.customers c
 LEFT JOIN
-(select dw_customer_id from prod.customer_history where 
+(select dw_customer_id from dev_dw.customer_history where 
 dw_active_record_ind = 1) d
 ON c.dw_customer_id = d.dw_customer_id
 WHERE d.dw_customer_id IS NULL;
@@ -73,7 +73,7 @@ WHERE d.dw_customer_id IS NULL;
     cursor.execute(copy_sql)
     conn.commit()
 
-    print("Data loaded successfully into Redshift.")
+    print("customerhistory loaded successfully into Redshift.")
 
 except Exception as e:
     print(f"Error: {str(e)}")

@@ -34,7 +34,7 @@ try:
 
     # SQL COPY command to load data from Stage to Prod in Redshift
     copy_sql = f"""
-    INSERT INTO prod.employees (
+    INSERT INTO dev_dw.employees (
     employeeNumber,
     lastName,
     firstName,
@@ -64,12 +64,12 @@ try:
     {etl_batch_no},
     cast('{etl_batch_date}' as date)
     FROM
-    stage.employees a 
-    JOIN prod.offices c ON 
+    dev_stage.employees a 
+    JOIN dev_dw.offices c ON 
     a.officeCode = c.officeCode;
     """
     # Truncating the table(Not Neccessary)
-    cursor.execute(f"TRUNCATE TABLE prod.{table_name} ")
+    cursor.execute(f"TRUNCATE TABLE dev_dw.{table_name} ")
 
     # Execute the COPY command to load data from S3
     cursor.execute(copy_sql)

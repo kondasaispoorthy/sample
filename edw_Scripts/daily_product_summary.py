@@ -30,11 +30,11 @@ try:
     # Extracting etl_batch_no and etl_batch_date from DataFrame
     etl_batch_no = df.etl_batch_no[0]
     etl_batch_date = df.etl_batch_date[0]
-    print(f"etl_batch_no and etl_batch_date are {etl_batch_no} and {etl_batch_date} respectively")
+    #print(f"etl_batch_no and etl_batch_date are {etl_batch_no} and {etl_batch_date} respectively")
 
     # SQL COPY command to load data from S3 to Redshift
     copy_sql = f"""
-    INSERT into prod.daily_product_summary
+    INSERT into dev_dw.daily_product_summary
 (
 orderDate,
 dw_product_id,
@@ -73,9 +73,9 @@ SUM(od.quantityOrdered * p.MSRP) as product_MSRP_amount,
 0 as cancelled_cost_amount,
 0 as cancelled_MSRP_amount,
 0 as cancelled_order_apd
-from prod.orders o INNER JOIN prod.orderdetails od ON 
+from dev_dw.orders o INNER JOIN dev_dw.orderdetails od ON 
 o.dw_order_id = od.dw_order_id
-INNER JOIN prod.products p ON
+INNER JOIN dev_dw.products p ON
 od.dw_product_id = p.dw_product_id
 WHERE o.orderDate >= cast('{etl_batch_date}' as date)
 GROUP BY 1,2
@@ -92,9 +92,9 @@ SUM(od.quantityOrdered * p.buyPrice) as cancelled_cost_amount,
 SUM(od.quantityOrdered * p.MSRP) as cancelled_MSRP_amount,
 1 as cancelled_order_apd
 FROM 
-prod.orders o INNER JOIN prod.orderdetails od 
+dev_dw.orders o INNER JOIN dev_dw.orderdetails od 
 ON o.dw_order_id = od.dw_order_id
-INNER JOIN prod.products p ON
+INNER JOIN dev_dw.products p ON
 od.dw_product_id = p.dw_product_id
 WHERE o.cancelledDate >= cast('{etl_batch_date}' as date)
 GROUP BY 1,2) x

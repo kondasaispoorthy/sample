@@ -49,7 +49,7 @@ try:
     cursor = conn.cursor()
      # selecting values from batch_control table
     cursor.execute(f"select * FROM etl_metadata.batch_control")
-    print("Query executed successfully")
+    #print("Query executed successfully")
 
     # Convert the results of the SQL query into a pandas DataFrame.
     df = pd.DataFrame(cursor.fetchall(), columns=list(map(lambda col: col[0],cursor.description)))
@@ -63,11 +63,11 @@ try:
     val = return_columns(file_path)
 
     # Truncate the table(if exists)
-    cursor.execute(f"TRUNCATE TABLE stage.{table_name}")
+    cursor.execute(f"TRUNCATE TABLE dev_stage.{table_name}")
 
     # SQL COPY command to load data from S3 to Redshift
     copy_sql = f"""
-    COPY dev.stage.{table_name}(
+    COPY dev.dev_stage.{table_name}(
     {val}
     )
     FROM 's3://{bucket_name}/{file_path}' IAM_ROLE 'arn:aws:iam::854668443937:role/service-role/AmazonRedshift-CommandsAccessRole-20231102T150508'  

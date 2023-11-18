@@ -30,13 +30,13 @@ try:
     # Extracting etl_batch_no and etl_batch_date from DataFrame
     etl_batch_no = df.etl_batch_no[0]
     etl_batch_date = df.etl_batch_date[0]
-    print(f"etl_batch_no and etl_batch_date are {etl_batch_no} and {etl_batch_date} respectively")
+    #print(f"etl_batch_no and etl_batch_date are {etl_batch_no} and {etl_batch_date} respectively")
 
     # SQL COPY command to load data from S3 to Redshift
     copy_sql = f"""
-    DELETE FROM prod.daily_customer_summary 
+    DELETE FROM dev_dw.daily_customer_summary 
 WHERE summarydate >= cast('{etl_batch_date}' as date);
-INSERT into prod.daily_customer_summary 
+INSERT into dev_dw.daily_customer_summary 
 (
 summarydate,
 dw_customer_id,
@@ -100,11 +100,11 @@ COUNT(DISTINCT p.ProductLine) as products_items_qty,
 0 as payment_amount,
 0 as new_customer_apd 
 FROM
-prod.customers c INNER JOIN prod.orders o
+dev_dw.customers c INNER JOIN dev_dw.orders o
 ON c.dw_customer_id = o.dw_customer_id
-INNER JOIN prod.orderdetails od 
+INNER JOIN dev_dw.orderdetails od 
 ON o.dw_order_id = od.dw_order_id
-INNER JOIN prod.products p 
+INNER JOIN dev_dw.products p 
 ON od.dw_product_id = p.dw_product_id
 WHERE o.orderDate >= cast('{etl_batch_date}' as date)
 GROUP BY 1,2
@@ -128,9 +128,9 @@ SUM(od.quantityOrdered * od.priceEach) as cancelled_order_amount,
 0 as payment_amount,	
 0 as new_customer_apd 
  FROM 
-prod.customers c INNER JOIN prod.orders o 
+dev_dw.customers c INNER JOIN dev_dw.orders o 
 ON c.dw_customer_id = o.dw_customer_id
-INNER JOIN prod.orderdetails od ON
+INNER JOIN dev_dw.orderdetails od ON
 o.dw_order_id = od.dw_order_id
 WHERE o.cancelledDate >= cast('{etl_batch_date}' as date)
 GROUP BY 1,2
@@ -152,8 +152,8 @@ SUM(od.quantityOrdered * od.priceEach) as shipped_order_amount,
 0 as payment_apd,	
 0 as payment_amount,	
 0 as new_customer_apd
-FROM prod.orders o
-INNER JOIN prod.orderdetails od ON
+FROM dev_dw.orders o
+INNER JOIN dev_dw.orderdetails od ON
 o.dw_order_id = od.dw_order_id
 WHERE o.shippedDate >= cast('{etl_batch_date}' as date)
 GROUP BY 1,2
@@ -176,7 +176,7 @@ dw_customer_id,
 1 as payment_apd,
 SUM(amount) as payment_amt,
 0 as new_customer_apd 
-FROM prod.Payments
+FROM dev_dw.Payments
 WHERE paymentDate >= cast('{etl_batch_date}' as date)
 GROUP BY 1,2
 UNION ALL
@@ -198,19 +198,19 @@ dw_customer_id,
 0 as payment_apd,
 0 as payment_amount,
 1 as new_customer_apd
-FROM prod.customers
+FROM dev_dw.customers
 WHERE DATE(src_create_timestamp)>=cast('{etl_batch_date}' as date)
 GROUP BY 1,2 ) a
 GROUP BY 1,2;
 
-UPDATE prod.daily_customer_summary dcs1
+UPDATE dev_dw.daily_customer_summary dcs1
 set new_customer_paid_apd = 1
 FROM
 (SELECT t1.dw_customer_id,
        t1.fod
 FROM (SELECT dw_customer_id,
              MIN(summarydate) AS fod
-      FROM prod.daily_customer_summary
+      FROM dev_dw.daily_customer_summary
       WHERE order_apd = 1
       GROUP BY 1) t1
 WHERE t1.fod >= cast('{etl_batch_date}' as date)) dcs2
@@ -221,7 +221,7 @@ WHERE dcs1.dw_customer_id=dcs2.dw_customer_id and dcs1.summarydate=dcs2.fod
     cursor.execute(copy_sql)
     conn.commit()
 
-    print("Data loaded successfully into Redshift.")
+    print("DCS loaded successfully into Redshift.")
 
 except Exception as e:
     print(f"Error: {str(e)}")

@@ -30,11 +30,11 @@ try:
     # Extracting etl_batch_no and etl_batch_date from DataFrame
     etl_batch_no = df.etl_batch_no[0]
     etl_batch_date = df.etl_batch_date[0]
-    print(f"etl_batch_no and etl_batch_date are {etl_batch_no} and {etl_batch_date} respectively")
+    #print(f"etl_batch_no and etl_batch_date are {etl_batch_no} and {etl_batch_date} respectively")
 
     # SQL  command to transfer  data from stage to dev in  Redshift
     copy_sql = f"""
-    INSERT INTO prod.productlines(
+    INSERT INTO dev_dw.productlines(
     productLine,
     src_create_timestamp,
     src_update_timestamp,
@@ -48,10 +48,10 @@ try:
     {etl_batch_no},
     cast('{etl_batch_date}' as date)
     FROM
-    stage.productlines a;
+    dev_stage.productlines a;
     """
     # Truncating the table(Not Neccessary)
-    cursor.execute(f"TRUNCATE TABLE prod.{table_name} ")
+    cursor.execute(f"TRUNCATE TABLE dev_dw.{table_name} ")
     # Execute the COPY command to load data from S3
     cursor.execute(copy_sql)
     conn.commit()

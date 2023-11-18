@@ -30,12 +30,12 @@ try:
     # Extracting etl_batch_no and etl_batch_date from DataFrame
     etl_batch_no = df.etl_batch_no[0]
     etl_batch_date = df.etl_batch_date[0]
-    print(f"etl_batch_no and etl_batch_date are {etl_batch_no} and {etl_batch_date} respectively")
+    #print(f"etl_batch_no and etl_batch_date are {etl_batch_no} and {etl_batch_date} respectively")
 
     # SQL command to transfer data from stage to prod in  Redshift
     copy_sql = f"""
     UPDATE 
-prod.payments a  
+dev_dw.payments a  
 SET
 src_customerNumber = b.customerNumber,
 checkNumber = b.checkNumber,
@@ -43,9 +43,9 @@ paymentDate = b.paymentDate,
 amount = b.amount,
 src_update_timestamp = b.update_timestamp,
 dw_update_timestamp = current_timestamp
-FROM stage.payments b
+FROM dev_stage.payments b
 WHERE a.checkNumber = b.checkNumber;
-INSERT INTO prod.payments(
+INSERT INTO dev_dw.payments(
 dw_customer_id,
 src_customerNumber,
 checkNumber,
@@ -67,9 +67,9 @@ a.update_timestamp,
 {etl_batch_no},
 cast('{etl_batch_date}' as date)
 FROM
-stage.payments a LEFT JOIN prod.payments b 
+dev_stage.payments a LEFT JOIN dev_dw.payments b 
 ON a.checkNumber = b.checkNumber
-JOIN prod.customers c ON 
+JOIN dev_dw.customers c ON 
 a.customerNumber = c.src_customerNumber
 WHERE b.checkNumber IS NULL;
     """
@@ -78,7 +78,7 @@ WHERE b.checkNumber IS NULL;
     cursor.execute(copy_sql)
     conn.commit()
 
-    print("Data loaded successfully into Redshift.")
+    print("Payments shifted successfully into Redshift.")
 
 except Exception as e:
     print(f"Error: {str(e)}")

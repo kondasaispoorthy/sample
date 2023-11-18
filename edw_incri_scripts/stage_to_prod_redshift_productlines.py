@@ -29,18 +29,18 @@ try:
     # Extracting etl_batch_no and etl_batch_date from DataFrame
     etl_batch_no = df.etl_batch_no[0]
     etl_batch_date = df.etl_batch_date[0]
-    print(f"etl_batch_no and etl_batch_date are {etl_batch_no} and {etl_batch_date} respectively")
+    #print(f"etl_batch_no and etl_batch_date are {etl_batch_no} and {etl_batch_date} respectively")
 
     # SQL  command to transfer  data from stage to dev in  Redshift
     copy_sql = f"""
-    UPDATE prod.productlines a  
+    UPDATE dev_dw.productlines a  
 SET
 productLine = b.productLine,
 src_update_timestamp = b.update_timestamp,
 dw_update_timestamp = current_timestamp
-FROM stage.productlines b
+FROM dev_stage.productlines b
 WHERE a.productLine = b.productLine;
-INSERT INTO prod.productlines(
+INSERT INTO dev_dw.productlines(
 productLine,
 src_create_timestamp,
 src_update_timestamp,
@@ -54,7 +54,7 @@ a.update_timestamp,
 {etl_batch_no},
 cast('{etl_batch_date}' as date)
 FROM
-stage.productlines a LEFT JOIN prod.productlines b
+dev_stage.productlines a LEFT JOIN dev_dw.productlines b
 ON a.productLine = b.productLine
 WHERE b.productLine IS NULL;
     """
@@ -63,7 +63,7 @@ WHERE b.productLine IS NULL;
     cursor.execute(copy_sql)
     conn.commit()
 
-    print("Data loaded successfully into Redshift.")
+    print("productline shifted successfully into Redshift.")
 
 except Exception as e:
     print(f"Error: {str(e)}")

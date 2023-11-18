@@ -30,12 +30,12 @@ try:
     # Extracting etl_batch_no and etl_batch_date from DataFrame
     etl_batch_no = df.etl_batch_no[0]
     etl_batch_date = df.etl_batch_date[0]
-    print(f"etl_batch_no and etl_batch_date are {etl_batch_no} and {etl_batch_date} respectively")
+    #print(f"etl_batch_no and etl_batch_date are {etl_batch_no} and {etl_batch_date} respectively")
 
     # SQL COPY command to load data from S3 to Redshift
     copy_sql = f"""
     UPDATE 
-prod.customers c1 
+dev_dw.customers c1 
 SET src_customerNumber = c2.customerNumber,
 customerName = c2.customerName,
 contactFirstName = c2.contactFirstName,
@@ -52,9 +52,9 @@ creditLimit = c2.creditLimit,
 src_create_timestamp = c2.create_timestamp,
 src_update_timestamp = c2.update_timestamp,
 dw_update_timestamp = current_timestamp
-FROM stage.customers c2
+FROM dev_stage.customers c2
 WHERE c1.src_customerNumber = c2.customerNumber;
-INSERT INTO prod.customers(
+INSERT INTO dev_dw.customers(
 src_customerNumber,
 customerName,
 contactLastName,
@@ -94,9 +94,9 @@ a.update_timestamp,
 {etl_batch_no},
 cast('{etl_batch_date}' as date)
 FROM 
-stage.customers a LEFT JOIN prod.customers b
+dev_stage.customers a LEFT JOIN dev_dw.customers b
 ON a.customerNumber = b.src_customerNumber
-LEFT JOIN prod.employees c ON
+LEFT JOIN dev_dw.employees c ON
 a.salesRepEmployeeNumber = c.employeeNumber
 WHERE b.src_customerNumber IS NULL;
     """
@@ -104,7 +104,7 @@ WHERE b.src_customerNumber IS NULL;
     cursor.execute(copy_sql)
     conn.commit()
 
-    print("Data loaded successfully into Redshift.")
+    print("customers shifted successfully into Redshift.")
 
 except Exception as e:
     print(f"Error: {str(e)}")

@@ -33,7 +33,7 @@ try:
 
     # SQL COPY command to load data from Stage to Prod in Redshift
     copy_sql = f"""
-UPDATE prod.employees a
+UPDATE dev_dw.employees a
 SET
 lastName = b.lastName,
 firstName = b.firstName,
@@ -44,9 +44,9 @@ reportsTo =  b.reportsto,
 jobTitle = b.jobTitle,
 src_update_timestamp = b.update_timestamp,
 dw_update_timestamp = current_timestamp
-FROM stage.employees b 
+FROM dev_stage.employees b 
 WHERE a.employeeNumber = b.employeeNumber;
-INSERT INTO prod.employees (
+INSERT INTO dev_dw.employees (
 employeeNumber,
 lastName,
 firstName,
@@ -72,9 +72,9 @@ c.dw_office_id,
 a.create_timestamp,
 a.update_timestamp
 FROM
-stage.employees a LEFT JOIN prod.employees b
+dev_stage.employees a LEFT JOIN dev_dw.employees b
 ON a.employeeNumber = b.employeeNumber
-JOIN prod.offices c ON 
+JOIN dev_dw.offices c ON 
 a.officeCode = c.officeCode
 WHERE b.employeeNumber IS NULL;
     """
@@ -83,7 +83,7 @@ WHERE b.employeeNumber IS NULL;
     cursor.execute(copy_sql)
     conn.commit()
 
-    print("Data loaded successfully into Redshift.")
+    print("Employees shifted successfully into Redshift.")
 
 except Exception as e:
     print(f"Error: {str(e)}")

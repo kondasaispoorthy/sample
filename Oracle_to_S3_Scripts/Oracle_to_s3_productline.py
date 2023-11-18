@@ -67,6 +67,6 @@ def upload_file(filename,folder,object_name=None):
 get_csvdata()
 folder = create_bucketfolders()
 folder = folder + '/'
-print(folder)
+#print(folder)
 upload_file(f'C:\\Users\\saispoorthy.konda\\Downloads\\Pratice\\sample\\{table_name}.csv',folder)
 print(f"Loaded the bucket {table_name}")

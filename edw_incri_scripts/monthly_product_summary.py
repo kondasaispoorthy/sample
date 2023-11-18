@@ -30,13 +30,13 @@ try:
     # Extracting etl_batch_no and etl_batch_date from DataFrame
     etl_batch_no = df.etl_batch_no[0]
     etl_batch_date = df.etl_batch_date[0]
-    print(f"etl_batch_no and etl_batch_date are {etl_batch_no} and {etl_batch_date} respectively")
+    #print(f"etl_batch_no and etl_batch_date are {etl_batch_no} and {etl_batch_date} respectively")
 
     # SQL COPY command to load data from S3 to Redshift
     copy_sql = f"""
-   DELETE FROM  prod.monthly_product_summary
+   DELETE FROM  dev_dw.monthly_product_summary
 WHERE start_of_the_month_date = DATE_TRUNC('MONTH',cast('{etl_batch_date}' as date)) ;
-INSERT INTO prod.monthly_product_summary
+INSERT INTO dev_dw.monthly_product_summary
 (
 start_of_the_month_date,
 dw_product_id,
@@ -75,7 +75,7 @@ THEN 1 ELSE 0
 END as customer_order_apm,
 {etl_batch_no} as etl_batch_no,
 cast('{etl_batch_date}' as date) as etl_batch_date
-FROM prod.daily_product_summary p1
+FROM dev_dw.daily_product_summary p1
 WHERE DATE_TRUNC('MONTH',p1.orderDate) = DATE_TRUNC('MONTH',cast('{etl_batch_date}' as date)) 
 GROUP BY 1,2
 ORDER BY 1,2;
@@ -85,7 +85,7 @@ ORDER BY 1,2;
     cursor.execute(copy_sql)
     conn.commit()
 
-    print("Data loaded successfully into Redshift.")
+    print("MPS loaded successfully into Redshift.")
 
 except Exception as e:
     print(f"Error: {str(e)}")

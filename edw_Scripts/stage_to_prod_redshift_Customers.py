@@ -31,11 +31,11 @@ try:
     # Extracting etl_batch_no and etl_batch_date from DataFrame
     etl_batch_no = df.etl_batch_no[0]
     etl_batch_date = df.etl_batch_date[0]
-    print(f"etl_batch_no and etl_batch_date are {etl_batch_no} and {etl_batch_date} respectively")
+    #print(f"etl_batch_no and etl_batch_date are {etl_batch_no} and {etl_batch_date} respectively")
 
     # SQL COPY command to load data from S3 to Redshift
     copy_sql = f"""
-    INSERT INTO prod.customers (
+    INSERT INTO dev_dw.customers (
     src_customerNumber,
     customerName,
     contactLastName,
@@ -75,12 +75,12 @@ try:
     {etl_batch_no},
     cast('{etl_batch_date}' as date)
     FROM 
-    stage.customers a 
-    LEFT JOIN prod.employees c ON
+    dev_stage.customers a 
+    LEFT JOIN dev_dw.employees c ON
     a.salesRepEmployeeNumber = c.employeeNumber;
     """
     # Truncating the table(Not Neccessary)
-    cursor.execute(f"TRUNCATE TABLE prod.{table_name} ")
+    cursor.execute(f"TRUNCATE TABLE dev_dw.{table_name} ")
 
     # Execute the COPY command to load data from S3
     cursor.execute(copy_sql)

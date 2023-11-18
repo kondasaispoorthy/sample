@@ -30,13 +30,13 @@ try:
     # Extracting etl_batch_no and etl_batch_date from DataFrame
     etl_batch_no = df.etl_batch_no[0]
     etl_batch_date = df.etl_batch_date[0]
-    print(f"etl_batch_no and etl_batch_date are {etl_batch_no} and {etl_batch_date} respectively")
+    #print(f"etl_batch_no and etl_batch_date are {etl_batch_no} and {etl_batch_date} respectively")
 
     # SQL COPY command to load data from S3 to Redshift
     copy_sql = f"""
-    DELETE FROM prod.customer_history
+    DELETE FROM dev_dw.customer_history
     WHERE create_etl_batch_date >= cast('{etl_batch_date}' as date);
-    INSERT INTO prod.customer_history(
+    INSERT INTO dev_dw.customer_history(
     dw_customer_id,
     creditLimit,
     effective_from_date,
@@ -50,7 +50,7 @@ try:
     1 dw_active_record_ind,
     {etl_batch_no},
     cast('{etl_batch_date}' as date)
-    FROM prod.customers;
+    FROM dev_dw.customers;
     """
 
     # Execute the COPY command to load data from S3

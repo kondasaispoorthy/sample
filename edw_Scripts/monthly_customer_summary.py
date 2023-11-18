@@ -30,11 +30,11 @@ try:
     # Extracting etl_batch_no and etl_batch_date from DataFrame
     etl_batch_no = df.etl_batch_no[0]
     etl_batch_date = df.etl_batch_date[0]
-    print(f"etl_batch_no and etl_batch_date are {etl_batch_no} and {etl_batch_date} respectively")
+    #print(f"etl_batch_no and etl_batch_date are {etl_batch_no} and {etl_batch_date} respectively")
 
     # SQL command to load data into prod in redshift
     copy_sql = f"""
-INSERT INTO prod.monthly_customer_summary(
+INSERT INTO dev_dw.monthly_customer_summary(
 dw_customer_id,
 summarydate,
 order_count,
@@ -102,7 +102,7 @@ WHEN SUM(new_customer_paid_apd) > 0 THEN 1 ELSE 0
 END as new_customer_paid_apm,
 {etl_batch_no} as etl_batch_no,
 cast('{etl_batch_date}' as date) as etl_batch_date
-FROM  prod.daily_customer_summary
+FROM  dev_dw.daily_customer_summary
 GROUP BY 1,2
 ORDER BY 1,2;
         """
