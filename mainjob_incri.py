@@ -11,11 +11,12 @@ def update():
     redshift_update.update_shift("increment")
 
 if __name__ == '__main__':
-    p1 = multiprocessing.Process(target=link, args=("cm_20050614","cm_20050614123"))
+    p1 = multiprocessing.Process(target=link, args=("cm_20050610","cm_20050610123"))
     p2 = multiprocessing.Process(target=run_script, args=("batch_control_log_start.py",))
     p3 = multiprocessing.Process(target=run_script, args=("./Oracle_to_S3_Scripts/Oraclescript.py",))
     p4 = multiprocessing.Process(target=run_script, args=("./S3_to_stage_Scripts/stage.py",))
-    p5 = multiprocessing.Process(target=run_script, args=("./edw_incri_scripts/dw1_scripts.py",))
+    #p5 = multiprocessing.Process(target=run_script, args=("./edw_incri_scripts/dw_scripts.py",))
+    p5 = multiprocessing.Process(target=run_script, args=("./edw_incri_scripts/dw2_scripts.py",))
     p6 = multiprocessing.Process(target=run_script, args=("batch_control_log_end.py",))
     p7 = multiprocessing.Process(target=update)
 

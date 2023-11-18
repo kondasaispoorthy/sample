@@ -16,7 +16,8 @@ if __name__ == '__main__':
     p2 = multiprocessing.Process(target=run_script, args=("batch_control_log_start.py",))
     p3 = multiprocessing.Process(target=run_script, args=("./Oracle_to_S3_Scripts/Oraclescript.py",))
     p4 = multiprocessing.Process(target=run_script, args=("./S3_to_stage_Scripts/stage.py",))
-    p5 = multiprocessing.Process(target=run_script, args=("./edw_Scripts/dw_scripts.py",))
+    #p5 = multiprocessing.Process(target=run_script, args=("./edw_Scripts/dw_scripts.py",))
+    p5 = multiprocessing.Process(target=run_script, args=("./edw_Scripts/dw3_scripts.py",))
     p6 = multiprocessing.Process(target=run_script, args=("batch_control_log_end.py",))
     p7 = multiprocessing.Process(target=update)
 
